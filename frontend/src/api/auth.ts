@@ -1,0 +1,88 @@
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API = `${BASE_URL}/auth`;
+
+export const register = async (data: {
+  name: string;
+  email: string;
+  password: string;
+}) => {
+  const res = await fetch(`${API}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result?.message || 'Registration failed');
+  }
+
+  return result;
+};
+
+export const login = async (data: { email: string; password: string }) => {
+  const res = await fetch(`${API}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result?.message || 'Login failed');
+  }
+
+  localStorage.setItem('token', result.token);
+
+  return result.token;
+};
+
+export const logout = () => {
+  localStorage.removeItem('token');
+};
+
+export const getMe = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  const res = await fetch(`${API}/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    localStorage.removeItem('token');
+    return null;
+  }
+
+  return res.json();
+};
+
+export const updateProfile = async (data: {
+  name: string;
+  bio?: string;
+  avatarUrl?: string;
+}) => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Unauthorized');
+
+  const res = await fetch(`${BASE_URL}/users/me`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result?.message || 'Failed to update profile');
+  }
+
+  return result;
+};
